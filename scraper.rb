@@ -1,25 +1,16 @@
-# This is a template for a Ruby scraper on morph.io (https://morph.io)
-# including some code snippets below that you should find helpful
-
-# require 'scraperwiki'
-# require 'mechanize'
-#
-# agent = Mechanize.new
-#
-# # Read in a page
-# page = agent.get("http://foo.com")
-#
-# # Find somehing on the page using css selectors
-# p page.at('div.content')
-#
-# # Write out to the sqlite database using scraperwiki library
-# ScraperWiki.save_sqlite(["name"], {"name" => "susan", "occupation" => "software developer"})
-#
-# # An arbitrary query against the database
-# ScraperWiki.select("* from data where 'name'='peter'")
-
-# You don't have to do things with the Mechanize or ScraperWiki libraries.
-# You can use whatever gems you want: https://morph.io/documentation/ruby
-# All that matters is that your final data is written to an SQLite database
-# called "data.sqlite" in the current working directory which has at least a table
-# called "data".
+require 'scraperwiki'
+require 'mechanize'
+require 'open-uri'
+content = Nokogiri::XML(open("https://geo.switchboardhq.com/"))
+items = content.xpath('//item')
+items.each do |item|
+  link = item.xpath('link').text
+  sub_page = Nokogiri::HTML(open(link))
+  type = sub_page.xpath('//*[@id="main_post"]/div[1]/div[1]/span').text.strip
+  if type == "Jobs"
+    description = item.xpath('description').text
+    title = item.xpath('title').text
+    date = item.xpath('pubDate').text
+    ScraperWiki.save_sqlite(["title", "date"], {"title" => title, "date"=> date, "description"=> description})
+  end
+end
